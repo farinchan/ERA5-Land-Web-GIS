@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}ERA5-Land Web GIS | Visualisasi Data Hidrometeorologi{% endblock %}
+
+{% block content %}
+<div class="webgis-container">
+    <!-- Left Sidebar: Control & Filter Panel -->
+    <aside class="gis-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="header-title">
+                <i class="fa-solid fa-sliders"></i>
+                <span>Panel Kontrol Layer</span>
+            </div>
+            <button class="sidebar-toggle-btn" id="btnToggleSidebar" title="Tutup/Buka Panel">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+        </div>
+
+        <div class="sidebar-content">
+            <!-- Variable Selector -->
+            <div class="control-group">
+                <label for="varSelect" class="control-label">
+                    <i class="fa-solid fa-cloud-sun-rain"></i> Variabel ERA5-Land
+                </label>
+                <select id="varSelect" class="form-control select-custom">
+                    {% for cat_name, vars in categories.items() %}
+                    <optgroup label="{{ cat_name }}">
+                        {% for v in vars %}
+                        <option value="{{ v.id }}" {% if v.id == default_variable %}selected{% endif %}>
+                            {{ v.name }} ({{ v.unit }})
+                        </option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                </select>
+                <div class="var-description" id="varDesc">
+                    Temperatur udara pada ketinggian 2 meter di atas permukaan tanah (°C).
+                </div>
+            </div>
+
+            <!-- Date & Time Selector -->
+            <div class="control-row">
+                <div class="control-group half">
+                    <label for="dateSelect" class="control-label">
+                        <i class="fa-regular fa-calendar"></i> Tanggal
+                    </label>
+                    <input type="date" id="dateSelect" class="form-control"
+                           min="{{ dataset_info.time_start[:10] if dataset_info.time_start else '2025-11-11' }}"
+                           max="{{ dataset_info.time_end[:10] if dataset_info.time_end else '2025-11-30' }}"
+                           value="{{ dataset_info.time_start[:10] if dataset_info.time_start else '2025-11-11' }}">
+                </div>
+                <div class="control-group half" id="hourGroup">
+                    <label for="hourSelect" class="control-label">
+                        <i class="fa-regular fa-clock"></i> Jam (UTC)
+                    </label>
+                    <select id="hourSelect" class="form-control select-custom">
+                        {% for h in range(24) %}
+                        <option value="{{ '%02d:00:00' % h }}">{{ '%02d:00' % h }} UTC</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Aggregation Selector -->
+            <div class="control-group">
+                <label for="aggSelect" class="control-label">
+                    <i class="fa-solid fa-chart-line"></i> Agregasi Temporal
+                </label>
+                <select id="aggSelect" class="form-control select-custom">
+                    <option value="hourly" selected>Hourly (Per Jam)</option>
+                    <option value="daily">Daily (Rerata / Total Harian)</option>
+                    <option value="monthly">Monthly (Rerata / Total Bulanan)</option>
+                    <option value="yearly">Yearly (Rerata / Total Tahunan)</option>
+                </select>
+            </div>
+
+            <!-- Time Animation Player -->
+            <div class="time-player-box" id="timePlayer">
+                <div class="player-header">
+                    <span><i class="fa-solid fa-play"></i> Time Series Player</span>
+                    <span id="playerSpeedText">1x</span>
+                </div>
+                <div class="player-controls">
+                    <button class="player-btn" id="btnPrevStep" title="Langkah Sebelumnya"><i class="fa-solid fa-backward-step"></i></button>
+                    <button class="player-btn btn-play" id="btnPlayPause" title="Mulai / Jeda Animasi"><i class="fa-solid fa-play"></i></button>
+                    <button class="player-btn" id="btnNextStep" title="Langkah Berikutnya"><i class="fa-solid fa-forward-step"></i></button>
+                </div>
+            </div>
+
+            <!-- Opacity & Display Controls -->
+            <div class="control-group">
+                <div class="label-with-value">
+                    <label for="opacityRange" class="control-label">
+                        <i class="fa-solid fa-circle-half-stroke"></i> Opacity Layer Raster
+                    </label>
+                    <span class="range-value" id="opacityValue">80%</span>
+                </div>
+                <input type="range" id="opacityRange" min="0" max="100" value="80" class="form-range">
+            </div>
+
+            <!-- Smooth Interpolation Toggle -->
+            <div class="control-toggle-row">
+                <span class="toggle-label"><i class="fa-solid fa-wand-magic-sparkles"></i> Interpolasi Halus (Smooth)</span>
+                <label class="switch">
+                    <input type="checkbox" id="smoothToggle" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <!-- Layers Switcher -->
+            <div class="control-group layers-group">
+                <span class="control-label"><i class="fa-solid fa-layer-group"></i> Layer Tambahan</span>
+                <div class="layer-item">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="layerRasterCheck" checked>
+                        <span>Layer Raster ERA5-Land</span>
+                    </label>
+                </div>
+                <div class="layer-item">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="layerWindCheck">
+                        <span>Vektor Angin (Arah & Kecepatan)</span>
+                    </label>
+                </div>
+                <div class="layer-item">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="layerBoundaryCheck" checked>
+                        <span>Batas Wilayah Administratif</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Basemap Selector -->
+            <div class="control-group">
+                <label class="control-label"><i class="fa-solid fa-map"></i> Peta Dasar (Basemap)</label>
+                <div class="basemap-options">
+                    <label class="basemap-radio">
+                        <input type="radio" name="basemapRadio" value="osm" checked>
+                        <span>OpenStreetMap</span>
+                    </label>
+                    <label class="basemap-radio">
+                        <input type="radio" name="basemapRadio" value="satellite">
+                        <span>Satelit ESRI</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="sidebar-actions">
+                <button class="btn btn-primary" id="btnApplyFilter">
+                    <i class="fa-solid fa-rotate"></i> Perbarui Visualisasi
+                </button>
+            </div>
+        </div>
+
+        <!-- Copyright Footer (Always pinned at bottom) -->
+        <div class="sidebar-footer">
+            <span>&copy; 2025 <strong>Fajri Rinaldi Chan</strong>. All rights reserved.</span>
+        </div>
+    </aside>
+
+    <!-- Center & Right: Interactive Map Area -->
+    <div class="map-wrapper" id="mapWrapper">
+        <div id="map"></div>
+
+        <!-- Floating Coordinates & Zoom Badge -->
+        <div class="map-coords-badge" id="mapCoords">
+            <span id="coordText">Arahkan kursor ke peta...</span>
+        </div>
+
+        <!-- Floating Map Toolbar -->
+        <div class="map-floating-toolbar">
+            <button class="map-tool-btn" id="btnResetView" title="Pusatkan ke Sumatera Barat">
+                <i class="fa-solid fa-crosshairs"></i>
+            </button>
+            <button class="map-tool-btn" id="btnDrawPolygon" title="Gambar Poligon untuk Analisis Spasial">
+                <i class="fa-solid fa-draw-polygon"></i>
+            </button>
+            <button class="map-tool-btn" id="btnClearDraw" title="Hapus Gambar Poligon">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        </div>
+
+        <!-- Dynamic Map Legend -->
+        <div class="map-legend" id="mapLegend">
+            <div class="legend-header">
+                <span class="legend-title" id="legendTitle">Temperature 2m</span>
+                <span class="legend-unit" id="legendUnit">(°C)</span>
+            </div>
+            <div class="legend-bar-wrapper">
+                <div class="legend-bar" id="legendBar"></div>
+            </div>
+            <div class="legend-ticks" id="legendTicks">
+                <span id="legendMin">15</span>
+                <span id="legendMid">25</span>
+                <span id="legendMax">35</span>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="map-loading-overlay" id="mapLoading">
+            <div class="spinner"></div>
+            <span class="loading-text">Memproses data spasial ERA5-Land...</span>
+        </div>
+
+        <!-- Bottom Drawer: Time Series & Spatial Statistics Dashboard -->
+        <div class="analytics-drawer" id="analyticsDrawer">
+            <div class="drawer-drag-handle" id="drawerDragHandle">
+                <div class="handle-bar"></div>
+            </div>
+            <div class="drawer-header">
+                <div class="drawer-title-box">
+                    <h3 class="drawer-title" id="chartTitle">
+                        <i class="fa-solid fa-chart-area"></i> Analisis Time Series Titik
+                    </h3>
+                    <span class="drawer-subtitle" id="chartSubtitle">Klik lokasi di peta untuk melihat profil temporal</span>
+                </div>
+
+                <div class="drawer-stats-cards" id="drawerStatsCards">
+                    <div class="stat-card">
+                        <span class="stat-label">Min</span>
+                        <span class="stat-val" id="statMin">-</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Mean</span>
+                        <span class="stat-val" id="statMean">-</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Max</span>
+                        <span class="stat-val" id="statMax">-</span>
+                    </div>
+                    <div class="stat-card" id="statTotalCard" style="display:none;">
+                        <span class="stat-label">Total</span>
+                        <span class="stat-val" id="statTotal">-</span>
+                    </div>
+                </div>
+
+                <div class="drawer-actions">
+                    <div class="btn-group-agg" id="chartAggGroup">
+                        <button class="btn-pill active" data-agg="hourly">Per Jam</button>
+                        <button class="btn-pill" data-agg="daily">Harian</button>
+                        <button class="btn-pill" data-agg="monthly">Bulanan</button>
+                    </div>
+                    <button class="btn btn-outline" id="btnExportCsv" title="Unduh Data CSV">
+                        <i class="fa-solid fa-download"></i> Ekspor CSV
+                    </button>
+                    <button class="btn-close-drawer" id="btnCloseDrawer" title="Tutup Panel">&times;</button>
+                </div>
+            </div>
+
+            <div class="drawer-body">
+                <div id="timeseriesChart" class="echarts-chart-container"></div>
+                <div class="chart-empty-state" id="chartEmptyState">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <p>Klik titik mana pun pada peta untuk mengekstrak time series data iklim ERA5-Land di koordinat tersebut.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

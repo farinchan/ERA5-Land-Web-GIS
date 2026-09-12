@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ERA5-Land Web GIS{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Leaflet Draw CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    
+    <!-- App Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body class="theme-dark">
+    <header class="app-navbar">
+        <div class="brand-section">
+            <div class="logo-icon">
+                <i class="fa-solid fa-earth-americas"></i>
+            </div>
+            <div class="brand-text">
+                <h1 class="brand-title">ERA5-Land Web GIS</h1>
+                <span class="brand-subtitle">&copy; Fajri Rinaldi Chan &bull; Hidrometeorologi Sumatera</span>
+            </div>
+        </div>
+        
+        <div class="navbar-center">
+            <div class="dataset-badge" id="datasetBadge" title="Cakupan Data NetCDF">
+                <span class="badge-dot"></span>
+                <span class="badge-text" id="activeVariableBadge">Loading...</span>
+                <span class="badge-separator">|</span>
+                <span class="badge-time" id="activeTimeBadge">2025-11-11</span>
+            </div>
+        </div>
+
+        <div class="navbar-actions">
+            <button class="nav-btn" id="btnHelp" title="Panduan & Informasi"><i class="fa-solid fa-circle-question"></i> <span>Panduan</span></button>
+            <button class="nav-btn" id="btnToggleStats" title="Buka Panel Statistik"><i class="fa-solid fa-chart-simple"></i> <span>Statistik</span></button>
+            <button class="nav-btn" id="btnFullscreen" title="Layar Penuh"><i class="fa-solid fa-expand"></i></button>
+        </div>
+    </header>
+
+    <main class="app-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Modal Help / About -->
+    <div class="modal-overlay" id="helpModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-info-circle"></i> Tentang ERA5-Land Web GIS</h3>
+                <button class="modal-close" id="btnCloseHelp">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Aplikasi Web GIS ini dibangun untuk memvisualisasikan dan menganalisis dataset reanalisis iklim <strong>ERA5-Land</strong> dari file NetCDF secara interaktif, efisien, dan tanpa mengirim raw file NetCDF ke browser.</p>
+                <div class="guide-grid">
+                    <div class="guide-item">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <h4>Eksplorasi Variabel</h4>
+                        <p>Pilih variabel temperatur, presipitasi, kelembaban tanah, tekanan permukaan, evaporasi, atau angin.</p>
+                    </div>
+                    <div class="guide-item">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <h4>Query Titik & Time Series</h4>
+                        <p>Klik di sembarang titik daratan pada peta untuk melihat nilai koordinat dan time series interaktif (ECharts).</p>
+                    </div>
+                    <div class="guide-item">
+                        <i class="fa-solid fa-draw-polygon"></i>
+                        <h4>Analisis Poligon Spasial</h4>
+                        <p>Gunakan tombol poligon di peta untuk menggambar batas penelitian dan menghitung statistik spasial otomatis.</p>
+                    </div>
+                    <div class="guide-item">
+                        <i class="fa-solid fa-wind"></i>
+                        <h4>Vektor Angin & Batas Wilayah</h4>
+                        <p>Aktifkan layer vektor arah/kecepatan angin dan batas wilayah administratif Sumatera.</p>
+                    </div>
+                </div>
+                <div class="modal-footer-credit">
+                    <p>&copy; 2025 <strong>Fajri Rinaldi Chan</strong>. All rights reserved.</p>
+                    <p class="credit-sub">Penelitian Hidrometeorologi & Web GIS ERA5-Land</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Leaflet Draw JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <!-- ECharts JS -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/map.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
