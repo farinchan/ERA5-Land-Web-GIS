@@ -7,7 +7,6 @@
 const Dashboard = (() => {
     let chartInstance = null;
     let currentPoint = null; // { lat, lon, marker }
-    let currentPolygon = null;
     let isPlaying = false;
     let playInterval = null;
     let availableTimes = [];
@@ -85,8 +84,6 @@ const Dashboard = (() => {
                 applyFilters();
                 if (currentPoint) {
                     loadPointTimeSeries(currentPoint.lat, currentPoint.lon, currentPoint.marker);
-                } else if (currentPolygon) {
-                    handlePolygonAnalysis(currentPolygon);
                 }
             });
         }
@@ -172,19 +169,9 @@ const Dashboard = (() => {
         if (btnNext) btnNext.addEventListener('click', stepNext);
         if (btnPrev) btnPrev.addEventListener('click', stepPrev);
 
-        // Map toolbar buttons
+        // Map toolbar button
         const btnReset = document.getElementById('btnResetView');
-        const btnDrawPoly = document.getElementById('btnDrawPolygon');
-        const btnClearDraw = document.getElementById('btnClearDraw');
-
         if (btnReset) btnReset.addEventListener('click', MapModule.resetView);
-        if (btnDrawPoly) btnDrawPoly.addEventListener('click', MapModule.startPolygonDraw);
-        if (btnClearDraw) {
-            btnClearDraw.addEventListener('click', () => {
-                MapModule.clearDrawn();
-                currentPolygon = null;
-            });
-        }
 
         // Drawer Controls
         const btnCloseDrawer = document.getElementById('btnCloseDrawer');
@@ -410,7 +397,6 @@ const Dashboard = (() => {
      */
     async function loadPointTimeSeries(lat, lon, marker, customAgg = null) {
         currentPoint = { lat, lon, marker };
-        currentPolygon = null;
 
         const variable = document.getElementById('varSelect')?.value || 't2m';
         const activeAggBtn = document.querySelector('#chartAggGroup .btn-pill.active');
@@ -484,72 +470,6 @@ const Dashboard = (() => {
         }
     }
 
-    /**
-     * Compute and render polygon spatial analysis
-     */
-    async function handlePolygonAnalysis(geometry) {
-        currentPolygon = geometry;
-        currentPoint = null;
-
-        const variable = document.getElementById('varSelect')?.value || 't2m';
-        toggleDrawer(true);
-
-        const emptyState = document.getElementById('chartEmptyState');
-        if (emptyState) emptyState.style.display = 'none';
-
-        if (chartInstance) {
-            chartInstance.showLoading({
-                text: 'Menghitung statistik poligon spasial...',
-                color: '#06b6d4',
-                textColor: '#f9fafb',
-                maskColor: 'rgba(11, 15, 25, 0.7)'
-            });
-        }
-
-        try {
-            const res = await fetch('/api/statistics/polygon', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    variable,
-                    geometry
-                })
-            });
-
-            if (!res.ok) throw new Error(`Status ${res.status}`);
-            const polyData = await res.json();
-
-            // Update title & subtitle
-            const titleEl = document.getElementById('chartTitle');
-            const subEl = document.getElementById('chartSubtitle');
-            if (titleEl) {
-                titleEl.innerHTML = `<i class="fa-solid fa-draw-polygon"></i> Analisis Spasial Poligon (${polyData.name})`;
-            }
-            if (subEl) {
-                subEl.innerHTML = `Jumlah Sel Grid: <strong>${polyData.cell_count}</strong> | Total Sampel: <strong>${polyData.valid_data_points}</strong>`;
-            }
-
-            // Update stats cards
-            updateStatsCards(polyData, polyData.unit, polyData.variable);
-
-            // Render chart
-            if (polyData.timeseries && polyData.timeseries.length > 0) {
-                const chartData = {
-                    name: `Rata-rata ${polyData.name}`,
-                    unit: polyData.unit,
-                    variable: polyData.variable,
-                    data: polyData.timeseries
-                };
-                renderChartSeries(chartData);
-            } else {
-                if (chartInstance) chartInstance.hideLoading();
-            }
-
-        } catch (err) {
-            console.error('Failed to calculate polygon statistics:', err);
-            if (chartInstance) chartInstance.hideLoading();
-        }
-    }
 
     /**
      * Update mini statistics cards
@@ -708,7 +628,6 @@ const Dashboard = (() => {
     return {
         init,
         loadPointTimeSeries,
-        handlePolygonAnalysis,
         toggleDrawer
     };
 })();

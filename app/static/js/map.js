@@ -10,8 +10,6 @@ const MapModule = (() => {
     let windLayerGroup = null;
     let boundaryLayerGroup = null;
     let clickMarker = null;
-    let drawnItems = null;
-    let drawControl = null;
 
     // Basemap tile layers
     const baseLayers = {
@@ -53,10 +51,6 @@ const MapModule = (() => {
         // Layer groups
         windLayerGroup = L.layerGroup().addTo(map);
         boundaryLayerGroup = L.layerGroup().addTo(map);
-        drawnItems = new L.FeatureGroup().addTo(map);
-
-        // Setup Leaflet Draw
-        setupDrawingTool();
 
         // Mouse hover coordinate tracker
         map.on('mousemove', (e) => {
@@ -92,72 +86,6 @@ const MapModule = (() => {
         }
     }
 
-    /**
-     * Setup Leaflet Draw for interactive polygon spatial analysis
-     */
-    function setupDrawingTool() {
-        const drawOptions = {
-            position: 'topleft',
-            draw: {
-                polyline: false,
-                circle: false,
-                circlemarker: false,
-                marker: false,
-                rectangle: {
-                    shapeOptions: {
-                        color: '#06b6d4',
-                        weight: 2,
-                        fillOpacity: 0.2
-                    }
-                },
-                polygon: {
-                    allowIntersection: false,
-                    drawError: {
-                        color: '#f43f5e',
-                        message: '<strong>Poligon tidak boleh bersilangan!</strong>'
-                    },
-                    shapeOptions: {
-                        color: '#0284c7',
-                        weight: 2,
-                        fillOpacity: 0.25
-                    }
-                }
-            },
-            edit: {
-                featureGroup: drawnItems,
-                remove: true
-            }
-        };
-
-        drawControl = new L.Control.Draw(drawOptions);
-        map.addControl(drawControl);
-
-        // Draw created event
-        map.on(L.Draw.Event.CREATED, (event) => {
-            const layer = event.layer;
-            drawnItems.clearLayers();
-            drawnItems.addLayer(layer);
-
-            const geojson = layer.toGeoJSON();
-            if (window.Dashboard && window.Dashboard.handlePolygonAnalysis) {
-                window.Dashboard.handlePolygonAnalysis(geojson.geometry);
-            }
-        });
-    }
-
-    /**
-     * Trigger polygon drawing from custom toolbar button
-     */
-    function startPolygonDraw() {
-        new L.Draw.Polygon(map, drawControl.options.draw.polygon).enable();
-    }
-
-    /**
-     * Clear drawn polygons
-     */
-    function clearDrawn() {
-        drawnItems.clearLayers();
-    }
 
     /**
      * Update ERA5-Land raster overlay
@@ -456,8 +384,6 @@ const MapModule = (() => {
         toggleBoundary,
         setBasemap,
         resetView,
-        startPolygonDraw,
-        clearDrawn,
         getMap: () => map
     };
 })();

@@ -1019,6 +1019,14 @@ input:checked + .slider:before {
     line-height: 1.4;
 }
 
+/* Remove focus outline on map and interactive markers */
+.leaflet-container:focus,
+.leaflet-interactive:focus,
+.leaflet-marker-icon:focus,
+.custom-click-pin:focus {
+    outline: none !important;
+}
+
 /* Leaflet Custom Marker & Popup */
 .custom-leaflet-popup .leaflet-popup-content-wrapper {
     background: var(--bg-surface);

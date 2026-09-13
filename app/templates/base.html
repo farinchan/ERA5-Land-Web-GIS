@@ -16,8 +16,6 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     
-    <!-- Leaflet Draw CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     
     <!-- App Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
@@ -76,9 +74,9 @@
                         <p>Klik di sembarang titik daratan pada peta untuk melihat nilai koordinat dan time series interaktif (ECharts).</p>
                     </div>
                     <div class="guide-item">
-                        <i class="fa-solid fa-draw-polygon"></i>
-                        <h4>Analisis Poligon Spasial</h4>
-                        <p>Gunakan tombol poligon di peta untuk menggambar batas penelitian dan menghitung statistik spasial otomatis.</p>
+                        <i class="fa-solid fa-play"></i>
+                        <h4>Animasi Dinamis Waktu</h4>
+                        <p>Gunakan time series player untuk memutar perubahan cuaca per jam secara otomatis.</p>
                     </div>
                     <div class="guide-item">
                         <i class="fa-solid fa-wind"></i>
@@ -96,8 +94,6 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <!-- Leaflet Draw JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <!-- ECharts JS -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     
